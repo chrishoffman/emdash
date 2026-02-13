@@ -18,6 +18,8 @@ import { registerJiraIpc } from './jiraIpc';
 import { registerPlanLockIpc } from '../services/planLockIpc';
 import { registerSettingsIpc } from './settingsIpc';
 import { registerHostPreviewIpc } from './hostPreviewIpc';
+import { registerProxyIpc } from './proxyIpc';
+import { initProxyIntegration } from '../services/proxyIntegration';
 import { registerBrowserIpc } from './browserIpc';
 import { registerNetIpc } from './netIpc';
 import { registerLineCommentsIpc } from './lineCommentsIpc';
@@ -38,6 +40,8 @@ export function registerAllIpc() {
   registerDatabaseIpc();
   registerGitIpc();
   registerHostPreviewIpc();
+  registerProxyIpc();
+  initProxyIntegration();
   registerBrowserIpc();
   registerNetIpc();
   registerLineCommentsIpc();

@@ -84,10 +84,8 @@ const BrowserPane: React.FC<{
       } catch {}
     }
 
-    try {
-      // Stop all other preview servers except the new current (if any)
-      (window as any).electronAPI?.hostPreviewStopAll?.(cur || '');
-    } catch {}
+    // Dev servers now stay running behind the local reverse proxy when switching tasks.
+    // No longer kill other preview servers on task switch.
 
     if (prev !== cur) {
       try {
@@ -102,7 +100,7 @@ const BrowserPane: React.FC<{
   }, [taskId, clearUrl, hideSpinner]);
 
   React.useEffect(() => {
-    const off = (window as any).electronAPI?.onHostPreviewEvent?.((data: any) => {
+    const off = (window as any).electronAPI?.onHostPreviewEvent?.(async (data: any) => {
       try {
         if (!data || !taskId || data.taskId !== taskId) return;
         if (data.type === 'setup') {
@@ -126,9 +124,24 @@ const BrowserPane: React.FC<{
           const appPort = Number(window.location.port || 0);
           if (isAppPort(String(data.url), appPort)) return;
           showSpinner();
-          navigate(String(data.url));
+
+          // Try to use proxy URL if the proxy is running
+          let finalUrl = String(data.url);
           try {
-            setLastUrl(String(taskId), String(data.url));
+            const proxyState = await (window as any).electronAPI?.proxyGetState?.();
+            if (proxyState?.success && proxyState.data?.running && proxyState.data?.port) {
+              const route = (proxyState.data.routes || []).find(
+                (r: any) => r.taskId === data.taskId && r.status === 'running'
+              );
+              if (route?.url) {
+                finalUrl = route.url;
+              }
+            }
+          } catch {}
+
+          navigate(finalUrl);
+          try {
+            setLastUrl(String(taskId), finalUrl);
           } catch {}
         }
         if (data.type === 'exit') {

@@ -473,6 +473,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener(channel, wrapped);
   },
 
+  // Local reverse proxy
+  proxyStart: (args?: { port?: number }) => ipcRenderer.invoke('proxy:start', args),
+  proxyStop: () => ipcRenderer.invoke('proxy:stop'),
+  proxyGetState: () => ipcRenderer.invoke('proxy:getState'),
+  proxyAddRoute: (args: {
+    name: string;
+    targetPort: number;
+    taskId?: string;
+    targetHost?: string;
+  }) => ipcRenderer.invoke('proxy:addRoute', args),
+  proxyRemoveRoute: (args: { name: string }) => ipcRenderer.invoke('proxy:removeRoute', args),
+  proxyGetRoutes: () => ipcRenderer.invoke('proxy:getRoutes'),
+  onProxyEvent: (listener: (data: any) => void) => {
+    const channel = 'proxy:event';
+    const wrapped = (_: Electron.IpcRendererEvent, data: any) => listener(data);
+    ipcRenderer.on(channel, wrapped);
+    return () => ipcRenderer.removeListener(channel, wrapped);
+  },
+
   // Main-managed browser (WebContentsView)
   browserShow: (bounds: { x: number; y: number; width: number; height: number }, url?: string) =>
     ipcRenderer.invoke('browser:view:show', { ...bounds, url }),
@@ -866,6 +885,28 @@ export interface ElectronAPI {
   onHostPreviewEvent: (
     listener: (data: { type: 'url'; taskId: string; url: string }) => void
   ) => () => void;
+
+  // Local reverse proxy
+  proxyStart: (args?: { port?: number }) => Promise<{ ok: boolean; port?: number; error?: string }>;
+  proxyStop: () => Promise<{ ok: boolean }>;
+  proxyGetState: () => Promise<{
+    success: boolean;
+    data?: { running: boolean; port: number | null; routes: any[] };
+    error?: string;
+  }>;
+  proxyAddRoute: (args: {
+    name: string;
+    targetPort: number;
+    taskId?: string;
+    targetHost?: string;
+  }) => Promise<{ success: boolean; data?: any; error?: string }>;
+  proxyRemoveRoute: (args: { name: string }) => Promise<{
+    success: boolean;
+    removed?: boolean;
+    error?: string;
+  }>;
+  proxyGetRoutes: () => Promise<{ success: boolean; data?: any[]; error?: string }>;
+  onProxyEvent: (listener: (data: any) => void) => () => void;
 
   // Main-managed browser (WebContentsView)
   browserShow: (

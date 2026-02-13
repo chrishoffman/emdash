@@ -1625,6 +1625,32 @@ export interface ElectronAPI {
     data?: import('@shared/skills/types').CatalogSkill;
     error?: string;
   }>;
+
+  // Local reverse proxy
+  proxyStart: (args?: { port?: number }) => Promise<{ ok: boolean; port?: number; error?: string }>;
+  proxyStop: () => Promise<{ ok: boolean }>;
+  proxyGetState: () => Promise<{
+    success: boolean;
+    data?: import('@shared/proxy').ProxyState;
+    error?: string;
+  }>;
+  proxyAddRoute: (args: {
+    name: string;
+    targetPort: number;
+    taskId?: string;
+    targetHost?: string;
+  }) => Promise<{ success: boolean; data?: import('@shared/proxy').ProxyRoute; error?: string }>;
+  proxyRemoveRoute: (args: { name: string }) => Promise<{
+    success: boolean;
+    removed?: boolean;
+    error?: string;
+  }>;
+  proxyGetRoutes: () => Promise<{
+    success: boolean;
+    data?: import('@shared/proxy').ProxyRoute[];
+    error?: string;
+  }>;
+  onProxyEvent: (listener: (data: import('@shared/proxy').ProxyEvent) => void) => () => void;
 }
 import type { TerminalSnapshotPayload } from '#types/terminalSnapshot';
 import type { OpenInAppId } from '#shared/openInApps';
